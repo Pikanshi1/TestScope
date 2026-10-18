@@ -16,14 +16,25 @@ TestScope helps developers understand the potential impact of a change and prior
 - **Graph visualization:** Explore modules, test files, and their relationships.
 - **Impact analysis:** Identify potentially affected modules within the configured graph traversal depth.
 - **Ranked test recommendations:** Prioritize candidate tests using graph relationships and historical co-change information.
-- **AI-generated report:** Explain the recommendations, supporting evidence, and uncertainty.
+- **AI-generated report:** Explain recommendations, supporting evidence, and uncertainty.
+
+## Screenshots
+
+### Overview
+![TestScope Overview](screenshots/overview.png)
+
+### Dependency Graph
+![TestScope Dependency Graph](screenshots/dependency-graph.png)
+
+### Impact Analysis
+![TestScope Impact Analysis](screenshots/impact-analysis.png)
 
 ## How It Works
 
 1. **Index:** Scan Python files and extract static import relationships.
 2. **Build the graph:** Store module nodes and `IMPORTS` and `CO_CHANGED` relationships in FalkorDB.
 3. **Analyze changes:** Traverse the graph to identify potentially affected modules and rank test candidates.
-4. **Explain:** Use an AI agent to summarize the graph evidence and produce an actionable test plan.
+4. **Explain:** Use an AI agent to summarize graph evidence and produce an actionable test plan.
 
 ## Architecture
 
@@ -34,18 +45,18 @@ Python Repository
 Static Import Analysis + Git History
        |
        v
-     FalkorDB
-  Module Relationship Graph
+    FalkorDB
+ Module Relationship Graph
        |
        v
-   FastAPI Backend
+  FastAPI Backend
        |
        +------> Graph Data
        |
        +------> Impact Analysis
        |              |
        |              v
-       |        Ranked Tests
+       |         Ranked Tests
        |
        +------> AI Explanation
                       |
@@ -65,7 +76,10 @@ Static Import Analysis + Git History
 
 ### Prerequisites
 
-Python, Node.js/npm, Docker, and a Groq API key for AI-generated reports.
+- Python
+- Node.js and npm
+- Docker
+- Groq API key for AI-generated reports
 
 ### 1. Start FalkorDB
 
@@ -75,7 +89,7 @@ docker run -d --name testscope-db \
   falkordb/falkordb:latest
 ```
 
-### 2. Install Python dependencies
+### 2. Install Python Dependencies
 
 From the repository root:
 
@@ -83,17 +97,17 @@ From the repository root:
 pip install -r requirements.txt
 ```
 
-Set your Groq API key in your environment if you want AI-generated reports.
+Configure your Groq API key using the environment variable expected by the application if you want AI-generated reports.
 
-### 3. Start the backend
+### 3. Start the Backend
 
 ```bash
 uvicorn server:app --reload --port 8000
 ```
 
-API documentation: `http://localhost:8000/docs`
+API documentation: [http://localhost:8000/docs](http://localhost:8000/docs)
 
-### 4. Start the frontend
+### 4. Start the Frontend
 
 In a separate terminal:
 
@@ -103,17 +117,17 @@ npm install
 npm run dev
 ```
 
-Open the local URL printed by Vite, usually `http://localhost:5173`.
+Open the local URL printed by Vite, usually [http://localhost:5173](http://localhost:5173).
 
 ## Scope and Limitations
 
-- Current static analysis focuses on Python repositories.
+- Static analysis currently focuses on Python repositories.
 - Dynamic imports and runtime behavior may not be captured by the graph.
-- Historical co-changes are signals of association, not proof of dependency.
+- Historical co-changes indicate association, not proof of dependency.
 - Test recommendations are candidates for prioritization; TestScope does not execute the recommended tests.
 
 ## Built For
 
 **Graph Hacks — Agents That Act on Connected Data**
 
-TestScope uses FalkorDB as its graph context layer so that test recommendations can be explained using relationships between code modules.
+TestScope uses FalkorDB as its graph context layer so that test recommendations can be explained through relationships between code modules.
