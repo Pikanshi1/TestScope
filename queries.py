@@ -10,21 +10,41 @@ import analyze
 
 _graph = None
 _graph_name = None
+_db = None
 
 
 def set_graph(graph_name: str):
     """Switch analysis to the selected repository graph."""
-    global _graph, _graph_name
+    global _graph, _graph_name, _db
 
     if not graph_name or not graph_name.replace("_", "").isalnum():
         raise ValueError("Invalid graph name.")
 
-    db = FalkorDB(
-        host=os.getenv("FALKORDB_HOST", "localhost"),
-        port=int(os.getenv("FALKORDB_PORT", "6379")),
-    )
+    host = os.getenv("FALKORDB_HOST", "localhost")
+    port = int(os.getenv("FALKORDB_PORT", "6379"))
+    username = os.getenv("FALKORDB_USERNAME") or None
+    password = os.getenv("FALKORDB_PASSWORD") or None
+    use_ssl = os.getenv("FALKORDB_SSL", "false").lower() == "true"
+    ca_cert = os.getenv("FALKORDB_CA_CERT") or None
 
-    _graph = db.select_graph(graph_name)
+    connection_options = {
+        "host": host,
+        "port": port,
+    }
+
+    if username:
+        connection_options["username"] = username
+
+    if password:
+        connection_options["password"] = password
+
+    if use_ssl:
+        connection_options["ssl"] = True
+        if ca_cert:
+            connection_options["ssl_ca_certs"] = ca_cert
+
+    _db = FalkorDB(**connection_options)
+    _graph = _db.select_graph(graph_name)
     _graph_name = graph_name
 
 
@@ -44,13 +64,7 @@ def run(q, params=None):
 
 
 def _dependents(files, max_hops):
-    """
-    Find modules that import changed files, directly or transitively.
-
-    Excludes changed files from the dependent results and rejects
-    paths containing repeated nodes. For each dependent/changed-file
-    pair, retain the shortest valid path.
-    """
+    """Find modules that import changed files, directly or transitively."""
     files = list(dict.fromkeys(files))
 
     if not files:
@@ -158,7 +172,7 @@ def blast_radius(files, max_hops=3):
 
 
 def rank_tests(files, max_hops=3, top_k=10):
-    """Rank tests using shortest dependency distance and co-change history."""
+    """Rank tests using dependency distance and co-change history."""
     files = list(dict.fromkeys(files))
 
     if not files:
