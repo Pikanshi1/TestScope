@@ -1,58 +1,119 @@
 # TestScope
 
-An agent that predicts the blast radius of a code change. FalkorDB stores a graph
-of a repo's modules, import edges and historical co-change edges. The agent queries
-the graph through tools, then writes a ranked test plan where every test carries the
-graph evidence behind it. Built for Graph Hacks (Track 01: Agents That Act on Connected Data).
+**Predict the blast radius of code changes and identify which tests deserve attention first.**
 
-## How it works
+TestScope is a graph-powered test impact analysis tool built for **Graph Hacks — Track 01: Agents That Act on Connected Data**. It uses FalkorDB to model relationships between Python modules and combines graph evidence with an AI-generated explanation to help developers investigate code changes.
 
+## The Problem
+
+When a developer changes a module, it can be difficult to determine which other modules and tests may be affected. Running every test can be expensive, while running too few can miss important regressions.
+
+TestScope helps developers understand the potential impact of a change and prioritize relevant tests.
+
+## Features
+
+- **Repository indexing:** Analyze a Python repository and build its dependency graph.
+- **Graph visualization:** Explore modules, test files, and their relationships.
+- **Impact analysis:** Identify potentially affected modules within the configured graph traversal depth.
+- **Ranked test recommendations:** Prioritize candidate tests using graph relationships and historical co-change information.
+- **AI-generated report:** Explain the recommendations, supporting evidence, and uncertainty.
+
+## How It Works
+
+1. **Index:** Scan Python files and extract static import relationships.
+2. **Build the graph:** Store module nodes and `IMPORTS` and `CO_CHANGED` relationships in FalkorDB.
+3. **Analyze changes:** Traverse the graph to identify potentially affected modules and rank test candidates.
+4. **Explain:** Use an AI agent to summarize the graph evidence and produce an actionable test plan.
+
+## Architecture
+
+```text
+Python Repository
+       |
+       v
+Static Import Analysis + Git History
+       |
+       v
+     FalkorDB
+  Module Relationship Graph
+       |
+       v
+   FastAPI Backend
+       |
+       +------> Graph Data
+       |
+       +------> Impact Analysis
+       |              |
+       |              v
+       |        Ranked Tests
+       |
+       +------> AI Explanation
+                      |
+                      v
+              React Dashboard
 ```
-target repo --ast--> Module nodes + IMPORTS edges  --\
-target repo --git log--> CO_CHANGED edges (weighted) --+--> FalkorDB
-                                                        |
-   changed files --> Cypher multi-hop traversal <-------+
-                 --> score tests (hop distance + co-change history)
-                 --> LLM agent explains, states uncertainty, writes report
-```
 
-Graph model: `(:Module {path, is_test})`, `(a)-[:IMPORTS]->(b)`, `(a)-[:CO_CHANGED {weight}]-(b)`.
+## Tech Stack
 
-## Setup
+- **Frontend:** React, TypeScript, Vite, Tailwind CSS
+- **Backend:** Python, FastAPI
+- **Graph database:** FalkorDB
+- **AI:** Groq API
+- **Analysis:** Python AST, Git history, Cypher graph queries
+
+## Run Locally
+
+### Prerequisites
+
+Python, Node.js/npm, Docker, and a Groq API key for AI-generated reports.
+
+### 1. Start FalkorDB
 
 ```bash
-docker run -p 6379:6379 -p 3000:3000 --rm falkordb/falkordb:latest   # DB + Browser on :3000
+docker run -d --name testscope-db \
+  -p 6379:6379 -p 3000:3000 \
+  falkordb/falkordb:latest
+```
+
+### 2. Install Python dependencies
+
+From the repository root:
+
+```bash
 pip install -r requirements.txt
-git clone https://github.com/psf/requests /tmp/requests               # target repo (or any Python repo)
-export GROQ_API_KEY=your_key
 ```
 
-## Run
+Set your Groq API key in your environment if you want AI-generated reports.
+
+### 3. Start the backend
 
 ```bash
-# 1. Build the graph (holdout keeps the newest 300 commits out of the co-change data)
-python build_graph.py --repo /tmp/requests --history 1500 --holdout 300
-
-# 2. Investigate a change
-python agent.py --files src/requests/sessions.py src/requests/utils.py
-#    or: python agent.py --repo /tmp/requests --diff HEAD~1
-
-# 3. Backtest on past commits (same --holdout as step 1)
-python backtest.py --repo /tmp/requests --holdout 300 --n 20 --k 5
-
-# Optional: serve the tools over MCP
-python mcp_server.py
+uvicorn server:app --reload --port 8000
 ```
 
-File paths must match the repo layout (for `requests` that is `src/requests/...`).
+API documentation: `http://localhost:8000/docs`
 
-## Limitations (stated honestly)
+### 4. Start the frontend
 
-- Python only. Dynamic imports, runtime wiring, config and non-Python files are invisible.
-- Import edges come from the current checkout, not from each historical commit.
-- Backtest ground truth is "tests changed in the same commit", a proxy for the tests that mattered.
-- Results come from one repo and about 20 commits; they are not a general accuracy claim.
+In a separate terminal:
 
-## Results
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-Backtest results have not yet been published. Run the backtest command to generate local results in `backtest_results.md`.
+Open the local URL printed by Vite, usually `http://localhost:5173`.
+
+## Scope and Limitations
+
+- Current static analysis focuses on Python repositories.
+- Dynamic imports and runtime behavior may not be captured by the graph.
+- Historical co-changes are signals of association, not proof of dependency.
+- Test recommendations are candidates for prioritization; TestScope does not execute the recommended tests.
+
+## Built For
+
+**Graph Hacks — Agents That Act on Connected Data**
+
+TestScope uses FalkorDB as its graph context layer so that test recommendations can be explained using relationships between code modules.
