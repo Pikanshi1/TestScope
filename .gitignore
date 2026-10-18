@@ -1,0 +1,40 @@
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Python environment and test artifacts
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Local databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Generated reports
+testscope_report.md
+
+# Node.js
+node_modules/
+frontend/node_modules/
+frontend/dist/
+
+# Local environment files
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+
+# Build and editor files
+.DS_Store
+Thumbs.db
+.vscode/

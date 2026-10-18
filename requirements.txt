@@ -1,0 +1,8 @@
+falkordb
+groq
+mcp
+python-dotenv
+fastapi
+uvicorn
+pytest
+requests
