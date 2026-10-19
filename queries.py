@@ -20,28 +20,31 @@ def set_graph(graph_name: str):
     if not graph_name or not graph_name.replace("_", "").isalnum():
         raise ValueError("Invalid graph name.")
 
-    host = os.getenv("FALKORDB_HOST", "localhost")
-    port = int(os.getenv("FALKORDB_PORT", "6379"))
-    username = os.getenv("FALKORDB_USERNAME") or None
-    password = os.getenv("FALKORDB_PASSWORD") or None
-    use_ssl = os.getenv("FALKORDB_SSL", "false").lower() == "true"
-    ca_cert = os.getenv("FALKORDB_CA_CERT") or None
+    from dotenv import load_dotenv
+    load_dotenv(override=True)
+
+    host = os.getenv("FALKORDB_HOST")
+    port = int(os.getenv("FALKORDB_PORT", "56636"))
+    username = os.getenv("FALKORDB_USERNAME")
+    password = os.getenv("FALKORDB_PASSWORD")
+    use_ssl = False
+
+    if not host or not username or not password:
+        raise ValueError(
+            "Missing FalkorDB configuration. Check FALKORDB_HOST, "
+            "FALKORDB_USERNAME, and FALKORDB_PASSWORD in .env."
+        )
 
     connection_options = {
         "host": host,
         "port": port,
+        "username": username,
+        "password": password,
+        "ssl": use_ssl,
     }
 
-    if username:
-        connection_options["username"] = username
-
-    if password:
-        connection_options["password"] = password
-
-    if use_ssl:
-        connection_options["ssl"] = True
-        if ca_cert:
-            connection_options["ssl_ca_certs"] = ca_cert
+    if use_ssl and ca_cert:
+        connection_options["ssl_ca_certs"] = ca_cert
 
     _db = FalkorDB(**connection_options)
     _graph = _db.select_graph(graph_name)

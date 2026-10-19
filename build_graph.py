@@ -6,7 +6,9 @@ import os
 
 from falkordb import FalkorDB
 import analyze
+from dotenv import load_dotenv
 
+load_dotenv(override=True)
 BATCH = 1000
 
 
@@ -32,8 +34,13 @@ def build_graph_for_repo(repo, graph_name, history=1500, holdout=300):
         cochange = []
 
     db = FalkorDB(
-        host=os.getenv("FALKORDB_HOST", "localhost"),
-        port=int(os.getenv("FALKORDB_PORT", "6379")),
+           host=os.getenv("FALKORDB_HOST"),
+           port=int(os.getenv("FALKORDB_PORT", "56636")),
+           username=os.getenv("FALKORDB_USERNAME"),
+           password=os.getenv("FALKORDB_PASSWORD"),
+           ssl=False,
+           socket_connect_timeout=10,
+           socket_timeout=10,
     )
     g = db.select_graph(graph_name)
 
